@@ -1,0 +1,209 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "#/",
+  "type": "object",
+  "dedupeService": {
+    "group": {
+      "input": {
+        "type": "object",
+        "properties": {
+          "window": {
+            "title": "how many of the most recent runs to consider",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100
+          },
+          "runs": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "runId": {
+                  "type": "string",
+                  "pattern": "^\\d+$"
+                },
+                "conclusion": {
+                  "type": "string",
+                  "enum": [
+                    "failure",
+                    "success",
+                    "other"
+                  ]
+                },
+                "commit": {
+                  "type": "string",
+                  "pattern": "^[0-9a-f]{7,40}$"
+                },
+                "branch": {
+                  "type": "string"
+                },
+                "createdAt": {
+                  "title": "ISO 8601",
+                  "type": "string",
+                  "pattern": "^\\d{4}-\\d\\d-\\d\\dT\\d\\d:\\d\\d:\\d\\d(?:\\.\\d+)?(?:Z|[+-]\\d\\d:\\d\\d)$"
+                },
+                "signature": {
+                  "type": "string",
+                  "pattern": "^[0-9a-f]{64}$"
+                }
+              },
+              "required": [
+                "runId",
+                "conclusion",
+                "commit",
+                "branch",
+                "createdAt"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "window",
+          "runs"
+        ],
+        "additionalProperties": false
+      },
+      "output": {
+        "type": "object",
+        "properties": {
+          "groups": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "signature": {
+                  "type": "string",
+                  "pattern": "^[0-9a-f]{64}$"
+                },
+                "count": {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                "runIds": {
+                  "title": "oldest first",
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "firstSeen": {
+                  "type": "object",
+                  "properties": {
+                    "runId": {
+                      "type": "string"
+                    },
+                    "commit": {
+                      "type": "string"
+                    },
+                    "createdAt": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "runId",
+                    "commit",
+                    "createdAt"
+                  ],
+                  "additionalProperties": false
+                },
+                "lastSeen": {
+                  "type": "object",
+                  "properties": {
+                    "runId": {
+                      "type": "string"
+                    },
+                    "commit": {
+                      "type": "string"
+                    },
+                    "createdAt": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "runId",
+                    "commit",
+                    "createdAt"
+                  ],
+                  "additionalProperties": false
+                },
+                "verdict": {
+                  "type": "string",
+                  "enum": [
+                    "new",
+                    "flaky",
+                    "recurring"
+                  ]
+                }
+              },
+              "required": [
+                "signature",
+                "count",
+                "runIds",
+                "firstSeen",
+                "lastSeen",
+                "verdict"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "latest": {
+            "anyOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "runId": {
+                    "type": "string"
+                  },
+                  "signature": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "pattern": "^[0-9a-f]{64}$"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                },
+                "required": [
+                  "runId",
+                  "signature"
+                ],
+                "additionalProperties": false
+              }
+            ]
+          }
+        },
+        "required": [
+          "groups",
+          "latest"
+        ],
+        "additionalProperties": false
+      }
+    }
+  },
+  "fault": {
+    "dedupeService": {
+      "group": {
+        "fault": {
+          "type": "object",
+          "properties": {
+            "reason": {
+              "title": "specific error reason",
+              "type": "string"
+            },
+            "info": {
+              "title": "detailed error info",
+              "type": "string"
+            }
+          }
+        }
+      }
+    }
+  }
+}

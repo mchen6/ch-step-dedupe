@@ -1,0 +1,20 @@
+{
+  "device": {
+    "friendlyName": "ch-step-dedupe",
+    "manufacturer": "ch-packs",
+    "modelDescription": "Step module of the ch-packs family: groups a window of CI runs' failures by signature and says of each whether it is new, flaky or recurring. A pure function of its input: no disk, no network, no state.",
+    "serviceList": {
+      "urn:ch-packs:serviceID:dedupeService": {
+        "actionList": [
+          {
+            "name": "group",
+            "description": "Takes every run in a window (each with its conclusion, commit, branch and time, failures with their ch-step-failure-signature signature) and keeps the `window` most recent. Groups the failures by signature, most recently seen first: count, run ids oldest first, first and last seen (run, commit, time), and a verdict: 'flaky' when a commit it failed on also passed in the window (a rerun that passed included), or when on one branch it alternated with passes at least twice (fail, pass, fail); else 'new' when seen only in the latest failed run; 'recurring' otherwise. Only failures are grouped; runs with no signature count in the window and are in no group. Also returns the latest run and its signature, or null.",
+            "input": {"schema": "/dedupeService/group/input"},
+            "output": {"schema": "/dedupeService/group/output"},
+            "fault": {"schema": "/fault/dedupeService/group/fault"}
+          }
+        ]
+      }
+    }
+  }
+}
