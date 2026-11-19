@@ -22,17 +22,17 @@ const isRun = (r) => r != null
   && isTime(r.createdAt)
   && (r.signature === undefined || (r.conclusion === 'failure' && typeof r.signature === 'string' && /^[0-9a-f]{64}$/.test(r.signature)));
 
-module.exports = async (input) => {
+module.exports = async (input, ctx) => {
   const window = input != null ? input.window : null;
   const runs = input != null ? input.runs : null;
   if (!Number.isInteger(window) || window < 1 || window > MAX_WINDOW) {
-    throw new DeviceError('ARGUMENTS_INVALID', `window must be an integer from 1 to ${MAX_WINDOW}`);
+    throw ctx.error('INPUT_REJECTED', `window must be an integer from 1 to ${MAX_WINDOW}`);
   }
   if (!Array.isArray(runs) || !runs.every(isRun)) {
-    throw new DeviceError('ARGUMENTS_INVALID', 'runs must be [{runId (digits), conclusion: failure|success|other, commit (hex SHA), branch, createdAt (ISO 8601), signature?: sha256 hex, on failures only}]');
+    throw ctx.error('INPUT_REJECTED', 'runs must be [{runId (digits), conclusion: failure|success|other, commit (hex SHA), branch, createdAt (ISO 8601), signature?: sha256 hex, on failures only}]');
   }
   if (new Set(runs.map((r) => r.runId)).size !== runs.length) {
-    throw new DeviceError('ARGUMENTS_INVALID', 'runs lists a run id more than once');
+    throw ctx.error('INPUT_REJECTED', 'runs lists a run id more than once');
   }
   return {output: groupFailures(window, runs)};
 };

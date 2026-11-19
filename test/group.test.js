@@ -1,9 +1,12 @@
 'use strict';
 const test = require('node:test');
 const assert = require('node:assert');
-require('./support');
 const {groupFailures} = require('../lib/group');
-const group = require('../handlers/dedupeService/group');
+const {CountinghouseError} = require('countinghouse/lib/countinghouse-error');
+// the handler as the runtime calls it: (input, ctx), ctx.error the runtime's
+const ctx = {error: (code, message, details) => CountinghouseError.module(code, message, details)};
+const handler = require('../handlers/dedupeService/group');
+const group = Object.assign((input) => handler(input, ctx), handler);
 
 const A = 'a'.repeat(64);
 const B = 'b'.repeat(64);
@@ -99,7 +102,7 @@ test('a signature on a run that did not fail is not grouped', () => {
 });
 
 test('handler validates its input', async () => {
-  const invalid = (err) => err.code === 'ARGUMENTS_INVALID';
+  const invalid = (err) => err.code === 'INPUT_REJECTED';
   const good = run(1, 'failure', A);
   for (const bad of [
     {}, null, {window: 0, runs: []}, {window: 101, runs: []}, {window: 50},
