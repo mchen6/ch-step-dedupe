@@ -39,11 +39,11 @@ test('groups are ordered most recently seen first', () => {
   assert.deepStrictEqual(out.groups.map((g) => g.signature), [A, C, B]);
 });
 
-test('new: seen only in the latest failed run', () => {
+test('new: seen once, in the latest failed run or an older one', () => {
   const out = groupFailures(50, [run(1, 'failure', A), run(2, 'success'), run(3, 'failure', B), run(4, 'success')]);
   const verdict = Object.fromEntries(out.groups.map((g) => [g.signature, g.verdict]));
   assert.strictEqual(verdict[B], 'new');
-  assert.strictEqual(verdict[A], 'recurring'); // seen once, but not in the latest failure
+  assert.strictEqual(verdict[A], 'new'); // seen once, not since (A12: was recurring)
   assert.deepStrictEqual(out.latest, {runId: '1004', signature: null}); // the latest run passed
 });
 
@@ -126,4 +126,30 @@ test('handler validates its input', async () => {
 
 test('the module is a part: never listed', () => {
   assert.deepStrictEqual(require('../package.json').countinghouse, {role: 'part'});
+});
+
+// The final pass on the packs (A12): a run picked by run_id whose failure
+// happened once is not "recurring": seen once, with no unreadable failure
+// after it, it is new (it was new when it happened, and has not recurred).
+test('an older failure seen once, with only readable failures after it, is new', () => {
+  const out = groupFailures(50, [run(1, 'success'), run(2, 'failure', A), run(3, 'failure', B)]);
+  assert.deepStrictEqual(out.groups.map((g) => [g.signature, g.count, g.verdict]), [[B, 1, 'new'], [A, 1, 'new']]);
+  // (an unreadable failure after it could have been the same: not new)
+  assert.strictEqual(groupFailures(50, [run(2, 'failure', A), run(3, 'failure'), run(4, 'failure', B)]).groups.find((g) => g.signature === A).verdict, 'recurring');
+});
+
+// A9: "Re-run jobs" keeps the run id: a failed run that then passed on a
+// rerun is sent as its failure, with passedOnRerun.
+test('a failure that passed on a rerun of the same run (passedOnRerun) is flaky', async () => {
+  const out = groupFailures(50, [run(1, 'success'), {...run(2, 'failure', A), passedOnRerun: true}]);
+  assert.strictEqual(out.groups[0].verdict, 'flaky');
+  // (its pass counts in another signature's alternations on the branch)
+  const alt = groupFailures(50, [run(1, 'failure', B), {...run(2, 'failure', A), passedOnRerun: true}, run(3, 'failure', B)]);
+  assert.strictEqual(alt.groups.find((g) => g.signature === B).verdict, 'flaky');
+  assert.deepStrictEqual(out.latest, {runId: '1002', signature: null}, 'the latest run passed on its rerun');
+  const {output} = await group({window: 50, runs: [{...run(2, 'failure', A), passedOnRerun: true}]});
+  assert.strictEqual(output.groups[0].verdict, 'flaky');
+  for (const bad of [{...run(2, 'failure', A), passedOnRerun: 'yes'}, {...run(2, 'success'), passedOnRerun: true}]) {
+    await assert.rejects(group({window: 50, runs: [bad]}), (err) => err.code === 'INPUT_REJECTED', JSON.stringify(bad));
+  }
 });
