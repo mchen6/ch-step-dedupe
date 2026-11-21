@@ -146,6 +146,7 @@ test('a failure that passed on a rerun of the same run (passedOnRerun) is flaky'
   // (its pass counts in another signature's alternations on the branch)
   const alt = groupFailures(50, [run(1, 'failure', B), {...run(2, 'failure', A), passedOnRerun: true}, run(3, 'failure', B)]);
   assert.strictEqual(alt.groups.find((g) => g.signature === B).verdict, 'flaky');
+  assert.deepStrictEqual(out.latest, {runId: '1002', signature: null}, 'the latest run passed on its rerun');
   const {output} = await group({window: 50, runs: [{...run(2, 'failure', A), passedOnRerun: true}]});
   assert.strictEqual(output.groups[0].verdict, 'flaky');
   for (const bad of [{...run(2, 'failure', A), passedOnRerun: 'yes'}, {...run(2, 'success'), passedOnRerun: true}]) {
