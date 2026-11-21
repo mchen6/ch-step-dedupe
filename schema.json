@@ -45,6 +45,10 @@
                 "signature": {
                   "type": "string",
                   "pattern": "^[0-9a-f]{64}$"
+                },
+                "passedOnRerun": {
+                  "title": "a failure that then passed on a rerun of the same run (Re-run jobs keeps the run id): its commit counts as one that passed",
+                  "type": "boolean"
                 }
               },
               "required": [

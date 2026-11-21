@@ -20,7 +20,8 @@ const isRun = (r) => r != null
   && CONCLUSIONS.includes(r.conclusion)
   && typeof r.commit === 'string' && /^[0-9a-f]{7,40}$/.test(r.commit) && typeof r.branch === 'string'
   && isTime(r.createdAt)
-  && (r.signature === undefined || (r.conclusion === 'failure' && typeof r.signature === 'string' && /^[0-9a-f]{64}$/.test(r.signature)));
+  && (r.signature === undefined || (r.conclusion === 'failure' && typeof r.signature === 'string' && /^[0-9a-f]{64}$/.test(r.signature)))
+  && (r.passedOnRerun === undefined || (r.conclusion === 'failure' && typeof r.passedOnRerun === 'boolean'));
 
 module.exports = async (input, ctx) => {
   const window = input != null ? input.window : null;
@@ -29,7 +30,7 @@ module.exports = async (input, ctx) => {
     throw ctx.error('INPUT_REJECTED', `window must be an integer from 1 to ${MAX_WINDOW}`);
   }
   if (!Array.isArray(runs) || !runs.every(isRun)) {
-    throw ctx.error('INPUT_REJECTED', 'runs must be [{runId (digits), conclusion: failure|success|other, commit (hex SHA), branch, createdAt (ISO 8601), signature?: sha256 hex, on failures only}]');
+    throw ctx.error('INPUT_REJECTED', 'runs must be [{runId (digits), conclusion: failure|success|other, commit (hex SHA), branch, createdAt (ISO 8601), signature?: sha256 hex, passedOnRerun?: boolean, both on failures only}]');
   }
   if (new Set(runs.map((r) => r.runId)).size !== runs.length) {
     throw ctx.error('INPUT_REJECTED', 'runs lists a run id more than once');
